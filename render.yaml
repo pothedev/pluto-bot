@@ -2,6 +2,9 @@ services:
   - type: web
     name: pluto
     env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python main.py"
-    plan: free
+    envVars:
+      - key: PORT
+        value: 8080

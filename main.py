@@ -5,6 +5,10 @@ from append_user import append_booster
 from get_username import get_username
 from get_cards import get_cards
 from remove_user import remove_booster
+from keepalive import keep_alive
+
+keep_alive()  # start the fake server 
+
 
 intents = discord.Intents.default()
 intents.message_content = True
