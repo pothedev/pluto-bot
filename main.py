@@ -238,8 +238,8 @@ async def set_trello_token(ctx, token: str):
     ensure_server_config(ctx.guild.id)
     config = load_config()[str(ctx.guild.id)]
 
-    if "trello_api_key" not in config or "trello_token" not in config:
-        return await ctx.send("❌ Set Trello key and token first.")
+    if "trello_api_key" not in config:
+        return await ctx.send("❌ Set Trello key first.")
     
     print(config["trello_api_key"])
 
