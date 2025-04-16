@@ -1,17 +1,25 @@
 import requests
-from data import TRELLO_API_KEY, TRELLO_TOKEN, TRELLO_BOOSTERS_LIST_ID
+from setup_functions import load_config
 
 
-def get_cards():
-  url = f"https://api.trello.com/1/lists/{TRELLO_BOOSTERS_LIST_ID}/cards"
+def get_cards(guild_id):
+
+  config = load_config()
+  server_config = config.get(guild_id, {})
+
+  trello_api_key = server_config["trello_api_key"]
+  trello_token = server_config["trello_token"]
+  trello_list_id = server_config["trello_list_id"]
+
+  url = f"https://api.trello.com/1/lists/{trello_list_id}/cards"
 
   headers = {
     "Accept": "application/json"
   }
 
   query = {
-    'key': TRELLO_API_KEY,
-    'token': TRELLO_TOKEN
+    'key': trello_api_key,
+    'token': trello_token
   }
 
   response = requests.request(

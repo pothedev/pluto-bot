@@ -1,11 +1,21 @@
 import discord
 from discord.ext import commands
-from data import SERVER_ID, BOOSTER_ROLE_ID, BOT_TOKEN, LOGS_CHANNEL_ID
+
 from append_user import append_booster
 from get_username import get_username
 from get_cards import get_cards
 from remove_user import remove_booster
+from setup_functions import *
+
 from keepalive import keep_alive
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv() 
+
+BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+
 
 keep_alive()  # start the fake server 
 
@@ -14,25 +24,21 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True  
 
-prefix = "!"
+prefix = "m!"
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="m!", intents=intents)
+
+CONFIG_FILE = "./config.json"
 
 
 
-def is_duplicate(label):
-  labels = get_cards()[1]
+def is_duplicate(label, guild_id):
+  labels = get_cards(guild_id)[1]
   if label in labels:
     return True
   else:
     return False
 
-
-
-def append_user(discord_user_id):
-  roblox_user = get_username(discord_user_id)
-  print(roblox_user)
-  append_booster(roblox_user)
 
 
 
@@ -41,9 +47,23 @@ async def on_ready():
     print(f"Bot is online as {bot.user}")
 
 
+
+
+#---------------------- manual update commands -------------------------
+
 @bot.command()
 async def update(ctx, role_arg: str, amount_arg: str):
-    logs_channel = ctx.guild.get_channel(int(LOGS_CHANNEL_ID))
+    if not is_bot_setup(ctx.guild.id):
+        await ctx.send("❌ Bot is not fully set up. Use `m!setup_status` to check what’s missing.")
+        return
+    
+    config = load_config()
+    guild_id = str(ctx.guild.id)
+    server_config = config.get(guild_id, {})
+    
+    logs_channel_id = server_config["logs_channel_id"]
+    booster_role_id = server_config["booster_role_id"]
+    logs_channel = ctx.guild.get_channel(int(logs_channel_id))
 
     if role_arg.lower() != "booster":
         await ctx.send("Invalid role. Only `booster` is supported.")
@@ -54,7 +74,7 @@ async def update(ctx, role_arg: str, amount_arg: str):
         await ctx.send("Server not found.")
         return
 
-    booster_role = discord.utils.get(guild.roles, id=int(BOOSTER_ROLE_ID))
+    booster_role = discord.utils.get(guild.roles, id=int(booster_role_id))
     if not booster_role:
         await ctx.send("Booster role not found.")
         return
@@ -66,10 +86,10 @@ async def update(ctx, role_arg: str, amount_arg: str):
         skipped = 0
         for member in booster_role.members: 
             discord_id = str(member.id)
-            roblox_user = get_username(discord_id)
+            roblox_user = get_username(discord_id, str(ctx.guild.id))
             if roblox_user:
-                if not is_duplicate(roblox_user):
-                    append_booster(roblox_user)
+                if not is_duplicate(roblox_user, str(ctx.guild.id)):
+                    append_booster(roblox_user, str(ctx.guild.id))
                     updated += 1
                     await logs_channel.send(f"✅ User {member} was added to the booster list as {roblox_user}.")
                 else:
@@ -103,14 +123,14 @@ async def update(ctx, role_arg: str, amount_arg: str):
 
     discord_id = str(target_member.id)
     try:
-        roblox_user = get_username(discord_id)
+        roblox_user = get_username(discord_id, str(ctx.guild.id))
         if roblox_user:
-            if not is_duplicate(roblox_user):
-                append_booster(roblox_user)
-                await ctx.send(f"✅ User {member} was added to the booster list as {roblox_user}.")
-                await logs_channel.send(f"✅ User {member} was added to the booster list as {roblox_user}.")
+            if not is_duplicate(roblox_user, str(ctx.guild.id)):
+                append_booster(roblox_user, str(ctx.guild.id))
+                await ctx.send(f"✅ User {target_member} was added to the booster list as {roblox_user}.")
+                await logs_channel.send(f"✅ User {target_member} was added to the booster list as {roblox_user}.")
             else:
-                await ctx.send(f"⚠️ User {member} is already in the booster list as {roblox_user}.")
+                await ctx.send(f"⚠️ User {target_member} is already in the booster list as {roblox_user}.")
         else:
             await ctx.send("❌ Roblox username not found.")
     except Exception as e:
@@ -119,44 +139,191 @@ async def update(ctx, role_arg: str, amount_arg: str):
 
 
 
+#--------------------- auto commands ------------------------
+
 @bot.event
 async def on_member_update(before, after):
-    logs_channel = after.guild.get_channel(int(LOGS_CHANNEL_ID))
-    booster_role = discord.utils.get(after.guild.roles, id=int(BOOSTER_ROLE_ID))
-    
-    if not booster_role:
-        print("Booster role not found.")
-        return
+    if is_bot_setup(after.guild.id):
+        config = load_config()
+        guild_id = str(after.guild.id)
+        server_config = config.get(guild_id, {})
 
-    had_booster = booster_role in before.roles
-    has_booster = booster_role in after.roles
+        booster_role_id = server_config["booster_role_id"]
+        logs_channel_id = server_config["logs_channel_id"]
+        booster_role = discord.utils.get(after.guild.roles, id=int(booster_role_id))
+        logs_channel = after.guild.get_channel(int(logs_channel_id))
+        
+        if not booster_role:
+            print("Booster role not found.")
+            return
 
-    discord_id = str(after.id)
-    roblox_user = get_username(discord_id)
+        had_booster = booster_role in before.roles
+        has_booster = booster_role in after.roles
 
-    #auto add
-    if not had_booster and has_booster:
-        if roblox_user:
-            if not is_duplicate(roblox_user):
-                append_booster(roblox_user)
-                if logs_channel:
-                    await logs_channel.send(f"✅ {after.mention} boosted the server and was added to Trello as **{roblox_user}**.")
+        discord_id = str(after.id)
+        roblox_user = get_username(discord_id, str(after.guild.id))
+
+        #auto add
+        if not had_booster and has_booster:
+            if roblox_user:
+                if not is_duplicate(roblox_user, str(after.guild.id)):
+                    append_booster(roblox_user, str(after.guild.id))
+                    if logs_channel:
+                        await logs_channel.send(f"✅ {after.mention} boosted the server and was added to Trello as **{roblox_user}**.")
+                else:
+                    if logs_channel:
+                        await logs_channel.send(f"⚠️ {after.mention} boosted the server but is already in the Trello list as **{roblox_user}**.")
             else:
                 if logs_channel:
-                    await logs_channel.send(f"⚠️ {after.mention} boosted the server but is already in the Trello list as **{roblox_user}**.")
-        else:
-            if logs_channel:
-                await logs_channel.send(f"⚠️ {after.mention} boosted the server. Roblox username not found.")
+                    await logs_channel.send(f"⚠️ {after.mention} boosted the server. Roblox username not found.")
 
-    #auto remove
-    elif had_booster and not has_booster:
-        if roblox_user:
-            remove_booster(roblox_user)
-            if logs_channel:
-                await logs_channel.send(f"✅ {after.mention} unboosted the server and was removed from Trello as **{roblox_user}**.")
-        else:
-            if logs_channel:
-                await logs_channel.send(f"⚠️ {after.mention} unboosted the server. Roblox username not found.")
+        #auto remove
+        elif had_booster and not has_booster:
+            if roblox_user:
+                remove_booster(roblox_user, str(after.guild.id))
+                if logs_channel:
+                    await logs_channel.send(f"✅ {after.mention} unboosted the server and was removed from Trello as **{roblox_user}**.")
+            else:
+                if logs_channel:
+                    await logs_channel.send(f"⚠️ {after.mention} unboosted the server. Roblox username not found.")
+
+
+
+# ------------------ set up commands ------------------
+
+
+@bot.command()
+async def init_config(ctx):
+    ensure_server_config(ctx.guild.id)
+    await ctx.send("✅ Config initialized for this server.")
+
+@bot.command()
+async def set_booster_role(ctx, role: discord.Role):
+    ensure_server_config(ctx.guild.id)
+    if role in ctx.guild.roles:
+        set_server_setting(ctx.guild.id, "booster_role_id", role.id)
+        await ctx.send(f"✅ Booster role set to {role.name}.")
+    else:
+        await ctx.send("❌ Role not found in this server.")
+
+@bot.command()
+async def set_logs_channel(ctx, channel: discord.TextChannel):
+    ensure_server_config(ctx.guild.id)
+    if channel in ctx.guild.text_channels:
+        set_server_setting(ctx.guild.id, "logs_channel_id", channel.id)
+        await ctx.send(f"✅ Logs channel set to {channel.mention}.")
+    else:
+        await ctx.send("❌ Channel not found in this server.")
+
+@bot.command()
+async def set_bloxlink_key(ctx, key: str):
+    ensure_server_config(ctx.guild.id)
+    if len(key) > 10:
+        set_server_setting(ctx.guild.id, "bloxlink_api_key", key)
+        await ctx.send("✅ Bloxlink key saved.")
+    else:
+        await ctx.send("❌ Invalid Bloxlink key.")
+
+@bot.command()
+async def set_trello_key(ctx, key: str):
+    ensure_server_config(ctx.guild.id)
+    if validate_trello_key(key):
+        set_server_setting(ctx.guild.id, "trello_api_key", key)
+        await ctx.send("✅ Trello API key saved.")
+    else:
+        await ctx.send("❌ Invalid Trello API key.")
+
+@bot.command()
+async def set_trello_token(ctx, token: str):
+    ensure_server_config(ctx.guild.id)
+    config = load_config()[str(ctx.guild.id)]
+
+    if "trello_api_key" not in config or "trello_token" not in config:
+        return await ctx.send("❌ Set Trello key and token first.")
+    
+    print(config["trello_api_key"])
+
+    print(validate_trello_token(config["trello_api_key"], token))
+    
+    if validate_trello_token(config["trello_api_key"], token):
+        set_server_setting(ctx.guild.id, "trello_token", token)
+        await ctx.send("✅ Trello token saved.")
+    else:
+        await ctx.send("❌ Invalid Trello token.")
+
+@bot.command()
+async def set_trello_board_id(ctx, board_id: str):
+    ensure_server_config(ctx.guild.id)
+    config = load_config()[str(ctx.guild.id)]
+    if "trello_api_key" not in config or "trello_token" not in config:
+        return await ctx.send("❌ Set Trello key and token first.")
+    if validate_trello_board(config["trello_api_key"], config["trello_token"], board_id):
+        set_server_setting(ctx.guild.id, "trello_board_id", board_id)
+        await ctx.send("✅ Trello board ID saved.")
+    else:
+        await ctx.send("❌ Invalid Trello board ID.")
+
+@bot.command()
+async def set_trello_list_id(ctx, list_id: str):
+    ensure_server_config(ctx.guild.id)
+    config = load_config()[str(ctx.guild.id)]
+    if "trello_api_key" not in config or "trello_token" not in config:
+        return await ctx.send("❌ Set Trello key and token first.")
+    if validate_trello_list(config["trello_api_key"], config["trello_token"], list_id):
+        set_server_setting(ctx.guild.id, "trello_list_id", list_id)
+        await ctx.send("✅ Trello list ID saved.")
+    else:
+        await ctx.send("❌ Invalid Trello list ID.")
+
+@bot.command()
+async def setup_status(ctx):
+    config = load_config()
+    guild_id = str(ctx.guild.id)
+    server_config = config.get(guild_id, {})
+
+    def check(key):
+        return "✅" if key in server_config and server_config[key] else "❌"
+
+    status_text = (
+        f"{check('booster_role_id')} Booster role\n"
+        f"{check('logs_channel_id')} Logs channel\n"
+        f"{check('bloxlink_api_key')} Bloxlink API key\n"
+        f"{check('trello_api_key')} Trello API key\n"
+        f"{check('trello_token')} Trello token\n"
+        f"{check('trello_board_id')} Trello board id\n"
+        f"{check('trello_list_id')} Trello booster list id"
+    )
+
+    embed = discord.Embed(
+        title="🛠️  Setup status",
+        color=discord.Color.dark_gray()
+    )
+
+    embed.add_field(name="\u200b", value=status_text, inline=False)
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def helpp(ctx):
+    commands = (
+        "➖ update {role} {all/member}\n"
+        "➖ set_booster_role\n"
+        "➖ set_logs_channel\n"
+        "➖ set_bloxlink_key\n"
+        "➖ set_trello_key\n"
+        "➖ set_trello_token\n"
+        "➖ set_trello_board_id\n"
+        "➖ set_trello_list_id\n"
+        "➖ setup_status\n"
+    )
+
+    embed = discord.Embed(
+        title="🛠️  Available commands",
+        color=discord.Color.dark_gray()
+    )
+
+    embed.add_field(name="\u200b", value=commands, inline=False)
+    await ctx.send(embed=embed)
+
 
 
 

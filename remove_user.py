@@ -1,17 +1,24 @@
-from data import TRELLO_API_KEY, TRELLO_TOKEN
 import requests
 from get_cards import get_cards
+from setup_functions import load_config
 
 
-def remove_booster(user):
 
-  user_id = get_cards()[0][user]
+def remove_booster(user, guild_id):
+
+  config = load_config()
+  server_config = config.get(guild_id, {})
+
+  trello_api_key = server_config["trello_api_key"]
+  trello_token = server_config["trello_token"]
+
+  user_id = get_cards(guild_id)[0][user]
 
   url = f"https://api.trello.com/1/cards/{user_id}"
 
   query = {
-    'key': TRELLO_API_KEY,
-    'token': TRELLO_TOKEN
+    'key': trello_api_key,
+    'token': trello_token
   }
 
   print("removing", user, "as", user_id)

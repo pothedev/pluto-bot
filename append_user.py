@@ -1,7 +1,14 @@
-from data import TRELLO_BOOSTERS_LIST_ID, TRELLO_API_KEY, TRELLO_TOKEN
 import requests
+from setup_functions import load_config
 
-def append_booster(user):
+def append_booster(user, guild_id):
+
+  config = load_config()
+  server_config = config.get(guild_id, {})
+
+  trello_list_id = server_config["trello_list_id"]
+  trello_api_key = server_config["trello_api_key"]
+  trello_token = server_config["trello_token"]
 
   url = "https://api.trello.com/1/cards"
 
@@ -10,9 +17,9 @@ def append_booster(user):
   }
 
   query = {
-    'idList': TRELLO_BOOSTERS_LIST_ID,
-    'key': TRELLO_API_KEY,
-    'token': TRELLO_TOKEN,
+    'idList': trello_list_id,
+    'key': trello_api_key,
+    'token': trello_token,
     'name': user
   }
 
