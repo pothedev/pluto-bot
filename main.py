@@ -326,6 +326,22 @@ async def helpp(ctx):
 
 
 
+@bot.command()
+async def show_json(ctx):
+    try:
+        with open("config.json", "r") as f:
+            config_data = json.load(f)
+
+        pretty_json = json.dumps(config_data, indent=2)
+        if len(pretty_json) > 1900:
+            await ctx.send("⚠️ Config is too long to display here.")
+        else:
+            await ctx.send(f"```json\n{pretty_json}\n```")
+    except Exception as e:
+        await ctx.send(f"❌ Failed to load config: {e}")
+
+
+
 
 bot.run(BOT_TOKEN)
 
