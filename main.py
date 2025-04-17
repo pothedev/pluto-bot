@@ -32,6 +32,16 @@ CONFIG_FILE = "./config.json"
 
 
 
+async def safe_send(channel, content):
+    try:
+        await channel.send(content)
+    except discord.Forbidden:
+        print(f"[Permission Error] Cannot send to channel: {channel}")
+    except discord.HTTPException as e:
+        print(f"[Discord Error] {e}")
+
+
+
 def is_duplicate(label, guild_id):
   labels = get_cards(guild_id)[1]
   if label in labels:
@@ -54,7 +64,8 @@ async def on_ready():
 @bot.command()
 async def update(ctx, role_arg: str, amount_arg: str):
     if not is_bot_setup(ctx.guild.id):
-        await ctx.send("❌ Bot is not fully set up. Use `m!setup_status` to check what’s missing.")
+        
+        await safe_send(ctx, "❌ Bot is not fully set up. Use `m!setup_status` to check what’s missing.")
         return
     
     config = load_config()
@@ -66,22 +77,22 @@ async def update(ctx, role_arg: str, amount_arg: str):
     logs_channel = ctx.guild.get_channel(int(logs_channel_id))
 
     if role_arg.lower() != "booster":
-        await ctx.send("Invalid role. Only `booster` is supported.")
+        await safe_send(ctx, "Invalid role. Only `booster` is supported.")
         return
 
     guild = ctx.guild
     if not guild:
-        await ctx.send("Server not found.")
+        safe_send(ctx, "Server not found.")
         return
 
     booster_role = discord.utils.get(guild.roles, id=int(booster_role_id))
     if not booster_role:
-        await ctx.send("Booster role not found.")
+        safe_send(ctx, "Booster role not found.")
         return
 
     #update all boosters
     if amount_arg.lower() == "all":
-        logs_channel.send("Bulk booster update was triggered")
+        safe_send(logs_channel, "Bulk booster update was triggered")
         updated = 0
         skipped = 0
         for member in booster_role.members: 
@@ -91,19 +102,19 @@ async def update(ctx, role_arg: str, amount_arg: str):
                 if not is_duplicate(roblox_user, str(ctx.guild.id)):
                     append_booster(roblox_user, str(ctx.guild.id))
                     updated += 1
-                    await logs_channel.send(f"✅ User {member} was added to the booster list as {roblox_user}.")
+                    await safe_send(logs_channel, f"✅ User {member} was added to the booster list as {roblox_user}.")
                 else:
-                    await logs_channel.send(f"⚠️ User {member} is already in the booster list as {roblox_user}. Skipped.")
+                    await safe_send(logs_channel, f"⚠️ User {member} is already in the booster list as {roblox_user}. Skipped.")
             else:
-                await logs_channel.send(f"❌ Roblox username was not found for {member}.")
+                await safe_send(logs_channel, f"❌ Roblox username was not found for {member}.")
                 skipped += 1
         message = ""
         if skipped == 1:
             message = f"Didn't find roblox account for {skipped} booster"
         elif skipped > 0:
             message = f"Didn't find roblox account for {skipped} booster"
-        await ctx.send(f"✅ Booster list updated for {updated} boosters. {message}")
-        await logs_channel.send(f"✅ Booster list updated for {updated} boosters. {message}")
+        await safe_send(ctx, f"✅ Booster list updated for {updated} boosters. {message}")
+        await safe_send(logs_channel, f"✅ Booster list updated for {updated} boosters. {message}")
         return
 
     #update a specific user
@@ -114,11 +125,11 @@ async def update(ctx, role_arg: str, amount_arg: str):
         try:
             target_member = await commands.MemberConverter().convert(ctx, amount_arg)
         except:
-            await ctx.send("❌ Couldn't find the specified user.")
+            await safe_send(ctx, "❌ Couldn't find the specified user.")
             return
 
     if booster_role not in target_member.roles:
-        await ctx.send("❌ This user doesn't have the booster role.")
+        await safe_send(ctx, "❌ This user doesn't have the booster role.")
         return
 
     discord_id = str(target_member.id)
@@ -127,15 +138,15 @@ async def update(ctx, role_arg: str, amount_arg: str):
         if roblox_user:
             if not is_duplicate(roblox_user, str(ctx.guild.id)):
                 append_booster(roblox_user, str(ctx.guild.id))
-                await ctx.send(f"✅ User {target_member} was added to the booster list as {roblox_user}.")
-                await logs_channel.send(f"✅ User {target_member} was added to the booster list as {roblox_user}.")
+                await safe_send(ctx, f"✅ User {target_member} was added to the booster list as {roblox_user}.")
+                await safe_send(logs_channel, f"✅ User {target_member} was added to the booster list as {roblox_user}.")
             else:
-                await ctx.send(f"⚠️ User {target_member} is already in the booster list as {roblox_user}.")
+                await safe_send(ctx, f"⚠️ User {target_member} is already in the booster list as {roblox_user}.")
         else:
-            await ctx.send("❌ Roblox username not found.")
+            await safe_send(ctx,"❌ Roblox username not found.")
     except Exception as e:
         print(f"Error updating {discord_id}: {e}")
-        await ctx.send("❌ Something went wrong while updating.")
+        await safe_send(ctx, "❌ Something went wrong while updating.")
 
 
 
