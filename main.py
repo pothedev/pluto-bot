@@ -275,6 +275,10 @@ async def set_trello_list_id(ctx, list_id: str):
     else:
         await ctx.send("❌ Invalid Trello list ID.")
 
+                
+ #------------------------------------------------------------------------------
+
+
 @bot.command()
 async def setup_status(ctx):
     config = load_config()
@@ -302,6 +306,10 @@ async def setup_status(ctx):
     embed.add_field(name="\u200b", value=status_text, inline=False)
     await ctx.send(embed=embed)
 
+        
+ #------------------------------------------------------------------------------
+
+
 @bot.command()
 async def helpp(ctx):
     commands = (
@@ -314,6 +322,7 @@ async def helpp(ctx):
         "➖ set_trello_board_id\n"
         "➖ set_trello_list_id\n"
         "➖ setup_status\n"
+        "➖ setup\n"
     )
 
     embed = discord.Embed(
@@ -324,6 +333,8 @@ async def helpp(ctx):
     embed.add_field(name="\u200b", value=commands, inline=False)
     await ctx.send(embed=embed)
 
+        
+ #------------------------------------------------------------------------------
 
 
 @bot.command()
@@ -339,6 +350,72 @@ async def show_json(ctx):
             await ctx.send(f"```json\n{pretty_json}\n```")
     except Exception as e:
         await ctx.send(f"❌ Failed to load config: {e}")
+
+
+ #------------------------------------------------------------------------------
+
+
+@bot.command()
+async def setup(ctx, *, args: str):
+    ensure_server_config(ctx.guild.id)
+    guild = ctx.guild
+    guild_id = str(guild.id)
+
+    config = load_config().get(guild_id, {})
+
+    # Parse arguments into a dictionary
+    pairs = args.split()
+    data = {}
+    for pair in pairs:
+        if "=" not in pair:
+            await ctx.send(f"❌ Invalid format: `{pair}` (use key=value)")
+            return
+        key, value = pair.split("=", 1)
+        data[key.strip()] = value.strip()
+
+    # Validate required keys
+    required_keys = [
+        "booster_role", "logs_channel", "bloxlink_key",
+        "trello_key", "trello_token", "trello_board_id", "trello_list_id"
+    ]
+    missing = [k for k in required_keys if k not in data]
+    if missing:
+        await ctx.send(f"❌ Missing keys: {', '.join(missing)}")
+        return
+
+    # Validate and apply
+    try:
+        # Roles and channels
+        booster_role = guild.get_role(int(data["booster_role"]))
+        logs_channel = guild.get_channel(int(data["logs_channel"]))
+        if not booster_role or not logs_channel:
+            await ctx.send("❌ Invalid role or channel ID.")
+            return
+
+        # Trello API checks
+        if not validate_trello_key(data["trello_key"]):
+            return await ctx.send("❌ Invalid Trello key.")
+        if not validate_trello_token(data["trello_key"], data["trello_token"]):
+            return await ctx.send("❌ Invalid Trello token.")
+        if not validate_trello_board(data["trello_key"], data["trello_token"], data["trello_board_id"]):
+            return await ctx.send("❌ Invalid Trello board ID.")
+        if not validate_trello_list(data["trello_key"], data["trello_token"], data["trello_list_id"]):
+            return await ctx.send("❌ Invalid Trello list ID.")
+
+        # Save config
+        set_server_setting(guild.id, "booster_role_id", int(data["booster_role"]))
+        set_server_setting(guild.id, "logs_channel_id", int(data["logs_channel"]))
+        set_server_setting(guild.id, "bloxlink_api_key", data["bloxlink_key"])
+        set_server_setting(guild.id, "trello_api_key", data["trello_key"])
+        set_server_setting(guild.id, "trello_token", data["trello_token"])
+        set_server_setting(guild.id, "trello_board_id", data["trello_board_id"])
+        set_server_setting(guild.id, "trello_list_id", data["trello_list_id"])
+
+        await ctx.send("✅ Setup completed successfully.")
+    except Exception as e:
+        print("Setup error:", e)
+        await ctx.send("❌ An error occurred during setup.")
+
 
 
 
