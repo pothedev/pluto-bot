@@ -1,16 +1,15 @@
 import requests
-from get_cards import get_cards
-from setup_functions import load_config
+from functions.get_cards import get_cards
+from functions.setup_functions import load_config
 
 
 
 def remove_booster(user, guild_id):
 
-  config = load_config()
-  server_config = config.get(guild_id, {})
+  config = load_config(guild_id)
 
-  trello_api_key = server_config["trello_api_key"]
-  trello_token = server_config["trello_token"]
+  trello_api_key = config["trello_api_key"]
+  trello_token = config["trello_token"]
 
   user_id = get_cards(guild_id)[0][user]
 

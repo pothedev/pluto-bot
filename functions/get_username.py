@@ -1,5 +1,5 @@
 import requests
-from setup_functions import load_config
+from functions.setup_functions import load_config
 
 
 
@@ -16,9 +16,8 @@ def roblox_id_to_username(user_id):
 
 def get_roblox_id(id, guild_id):
 
-  config = load_config()
-  server_config = config.get(guild_id, {})
-  bloxlink_api_key = server_config["bloxlink_api_key"]
+  config = load_config(guild_id)
+  bloxlink_api_key = config["bloxlink_api_key"]
 
   response = requests.get(f'https://api.blox.link/v4/public/guilds/{guild_id}/discord-to-roblox/{id}',  headers={"Authorization" : bloxlink_api_key})
   if response.status_code == 200:

@@ -1,15 +1,14 @@
 import requests
-from setup_functions import load_config
+from functions.setup_functions import load_config
 
 
 def get_cards(guild_id):
 
-  config = load_config()
-  server_config = config.get(guild_id, {})
+  config = load_config(guild_id)
 
-  trello_api_key = server_config["trello_api_key"]
-  trello_token = server_config["trello_token"]
-  trello_list_id = server_config["trello_list_id"]
+  trello_api_key = config["trello_api_key"]
+  trello_token = config["trello_token"]
+  trello_list_id = config["trello_list_id"]
 
   url = f"https://api.trello.com/1/lists/{trello_list_id}/cards"
 
