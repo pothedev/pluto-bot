@@ -3,13 +3,13 @@ from firebase_admin import credentials, firestore
 import os
 import json
 
-# Read the stringified JSON from environment
+# Get the raw JSON string from env
 firebase_config_json = os.getenv("FIREBASE_CONFIG_JSON")
 
-# Parse it from JSON string to dict
+# Convert it to a dictionary
 firebase_dict = json.loads(firebase_config_json)
 
-# Correct usage: pass dict, not string
+# Initialize Firebase only once
 if not firebase_admin._apps:
     cred = credentials.Certificate(firebase_dict)
     firebase_admin.initialize_app(cred)
