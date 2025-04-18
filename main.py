@@ -45,6 +45,7 @@ async def safe_send(channel, content):
 
 
 
+
 def is_duplicate(label, guild_id):
   labels = get_cards(guild_id)[1]
   if label in labels:
@@ -67,7 +68,7 @@ async def on_ready():
 @bot.command()
 async def update(ctx, role_arg: str, amount_arg: str):
     if not is_bot_setup(ctx.guild.id):
-        await safe_send(ctx, "❌ Bot is not fully set up. Use `m!setup_status` to check what’s missing.")
+        await safe_send(ctx.channel, "❌ Bot is not fully set up. Use `m!setup_status` to check what’s missing.")
         return
     
     config = load_config(str(ctx.guild.id))
@@ -77,17 +78,17 @@ async def update(ctx, role_arg: str, amount_arg: str):
     logs_channel = ctx.guild.get_channel(int(logs_channel_id))
 
     if role_arg.lower() != "booster":
-        await safe_send(ctx, "Invalid role. Only `booster` is supported.")
+        await safe_send(ctx.channel, "Invalid role. Only `booster` is supported.")
         return
 
     guild = ctx.guild
     if not guild:
-        await safe_send(ctx, "Server not found.")
+        await safe_send(ctx.channel, "Server not found.")
         return
 
     booster_role = discord.utils.get(guild.roles, id=int(booster_role_id))
     if not booster_role:
-        await safe_send(ctx, "Booster role not found.")
+        await safe_send(ctx.channel, "Booster role not found.")
         return
 
     #update all boosters
@@ -113,7 +114,7 @@ async def update(ctx, role_arg: str, amount_arg: str):
             message = f"Didn't find roblox account for {skipped} booster"
         elif skipped > 0:
             message = f"Didn't find roblox account for {skipped} booster"
-        await safe_send(ctx, f"✅ Booster list updated for {updated} boosters. {message}")
+        await safe_send(ctx.channel, f"✅ Booster list updated for {updated} boosters. {message}")
         await safe_send(logs_channel, f"✅ Booster list updated for {updated} boosters. {message}")
         return
 
@@ -125,11 +126,11 @@ async def update(ctx, role_arg: str, amount_arg: str):
         try:
             target_member = await commands.MemberConverter().convert(ctx, amount_arg)
         except:
-            await safe_send(ctx, "❌ Couldn't find the specified user.")
+            await safe_send(ctx.channel, "❌ Couldn't find the specified user.")
             return
 
     if booster_role not in target_member.roles:
-        await safe_send(ctx, "❌ This user doesn't have the booster role.")
+        await safe_send(ctx.channel, "❌ This user doesn't have the booster role.")
         return
 
     discord_id = str(target_member.id)
@@ -138,15 +139,15 @@ async def update(ctx, role_arg: str, amount_arg: str):
         if roblox_user:
             if not is_duplicate(roblox_user, str(ctx.guild.id)):
                 append_booster(roblox_user, str(ctx.guild.id))
-                await safe_send(ctx, f"✅ User {target_member} was added to the booster list as {roblox_user}.")
+                await safe_send(ctx.channel, f"✅ User {target_member} was added to the booster list as {roblox_user}.")
                 await safe_send(logs_channel, f"✅ User {target_member} was added to the booster list as {roblox_user}.")
             else:
-                await safe_send(ctx, f"⚠️ User {target_member} is already in the booster list as {roblox_user}.")
+                await safe_send(ctx.channel, f"⚠️ User {target_member} is already in the booster list as {roblox_user}.")
         else:
-            await safe_send(ctx,"❌ Roblox username not found.")
+            await safe_send(ctx.channel,"❌ Roblox username not found.")
     except Exception as e:
         print(f"Error updating {discord_id}: {e}")
-        await safe_send(ctx, "❌ Something went wrong while updating.")
+        await safe_send(ctx.channel, "❌ Something went wrong while updating.")
 
 
 
@@ -205,40 +206,40 @@ async def on_member_update(before, after):
 async def set_booster_role(ctx, role: discord.Role):
     if role in ctx.guild.roles:
         set_server_setting(ctx.guild.id, "booster_role_id", role.id)
-        await safe_send(ctx, f"✅ Booster role set to {role.name}.")
+        await safe_send(ctx.channel, f"✅ Booster role set to {role.name}.")
     else:
-        await safe_send(ctx, "❌ Role not found in this server.")
+        await safe_send(ctx.channel, "❌ Role not found in this server.")
 
 @bot.command()
 async def set_logs_channel(ctx, channel: discord.TextChannel):
     if channel in ctx.guild.text_channels:
         set_server_setting(ctx.guild.id, "logs_channel_id", channel.id)
-        await safe_send(ctx, f"✅ Logs channel set to {channel.mention}.")
+        await safe_send(ctx.channel, f"✅ Logs channel set to {channel.mention}.")
     else:
-        await safe_send(ctx, "❌ Channel not found in this server.")
+        await safe_send(ctx.channel, "❌ Channel not found in this server.")
 
 @bot.command()
 async def set_bloxlink_key(ctx, key: str):
     if len(key) > 10:
         set_server_setting(ctx.guild.id, "bloxlink_api_key", key)
-        await safe_send(ctx, "✅ Bloxlink key saved.")
+        await safe_send(ctx.channel, "✅ Bloxlink key saved.")
     else:
-        await safe_send(ctx, "❌ Invalid Bloxlink key.")
+        await safe_send(ctx.channel, "❌ Invalid Bloxlink key.")
 
 @bot.command()
 async def set_trello_key(ctx, key: str):
     if validate_trello_key(key):
         set_server_setting(ctx.guild.id, "trello_api_key", key)
-        await safe_send(ctx, "✅ Trello API key saved.")
+        await safe_send(ctx.channel, "✅ Trello API key saved.")
     else:
-        await safe_send(ctx, "❌ Invalid Trello API key.")
+        await safe_send(ctx.channel, "❌ Invalid Trello API key.")
 
 @bot.command()
 async def set_trello_token(ctx, token: str):
     config = load_config(str(ctx.guild.id))
 
     if "trello_api_key" not in config:
-        return await safe_send(ctx, "❌ Set Trello key first.")
+        return await safe_send(ctx.channel, "❌ Set Trello key first.")
     
     print(config["trello_api_key"])
 
@@ -246,31 +247,31 @@ async def set_trello_token(ctx, token: str):
     
     if validate_trello_token(config["trello_api_key"], token):
         set_server_setting(ctx.guild.id, "trello_token", token)
-        await safe_send(ctx, "✅ Trello token saved.")
+        await safe_send(ctx.channel, "✅ Trello token saved.")
     else:
-        await safe_send(ctx, "❌ Invalid Trello token.")
+        await safe_send(ctx.channel, "❌ Invalid Trello token.")
 
 @bot.command()
 async def set_trello_board_id(ctx, board_id: str):
     config = load_config(str(ctx.guild.id))
     if "trello_api_key" not in config or "trello_token" not in config:
-        return await safe_send(ctx, "❌ Set Trello key and token first.")
+        return await safe_send(ctx.channel, "❌ Set Trello key and token first.")
     if validate_trello_board(config["trello_api_key"], config["trello_token"], board_id):
         set_server_setting(ctx.guild.id, "trello_board_id", board_id)
-        await safe_send(ctx, "✅ Trello board ID saved.")
+        await safe_send(ctx.channel, "✅ Trello board ID saved.")
     else:
-        await safe_send(ctx, "❌ Invalid Trello board ID.")
+        await safe_send(ctx.channel, "❌ Invalid Trello board ID.")
 
 @bot.command()
 async def set_trello_list_id(ctx, list_id: str):
     config = load_config(str(ctx.guild.id))
     if "trello_api_key" not in config or "trello_token" not in config:
-        return await safe_send(ctx, "❌ Set Trello key and token first.")
+        return await safe_send(ctx.channel, "❌ Set Trello key and token first.")
     if validate_trello_list(config["trello_api_key"], config["trello_token"], list_id):
         set_server_setting(ctx.guild.id, "trello_list_id", list_id)
-        await safe_send(ctx, "✅ Trello list ID saved.")
+        await safe_send(ctx.channel, "✅ Trello list ID saved.")
     else:
-        await safe_send(ctx, "❌ Invalid Trello list ID.")
+        await safe_send(ctx.channel, "❌ Invalid Trello list ID.")
 
                 
 #------------------------------------------------------------------------------
@@ -299,7 +300,7 @@ async def setup_status(ctx):
     )
 
     embed.add_field(name="\u200b", value=status_text, inline=False)
-    await safe_send(ctx, embed=embed)
+    await safe_send(ctx.channel, embed=embed)
 
         
  #------------------------------------------------------------------------------
@@ -326,7 +327,7 @@ async def commands(ctx):
     )
 
     embed.add_field(name="\u200b", value=commands, inline=False)
-    await safe_send(ctx, embed=embed)
+    await safe_send(ctx.channel, embed=embed)
 
         
  #------------------------------------------------------------------------------
@@ -340,11 +341,11 @@ async def show_json(ctx):
 
         pretty_json = json.dumps(config_data, indent=2)
         if len(pretty_json) > 1900:
-            await safe_send(ctx, "⚠️ Config is too long to display here.")
+            await safe_send(ctx.channel, "⚠️ Config is too long to display here.")
         else:
-            await safe_send(ctx, f"```json\n{pretty_json}\n```")
+            await safe_send(ctx.channel, f"```json\n{pretty_json}\n```")
     except Exception as e:
-        await safe_send(ctx, f"❌ Failed to load config: {e}")
+        await safe_send(ctx.channel, f"❌ Failed to load config: {e}")
 
 
  #------------------------------------------------------------------------------
@@ -360,7 +361,7 @@ async def setup(ctx, *, args: str):
     data = {}
     for pair in pairs:
         if "=" not in pair:
-            await safe_send(ctx, f"❌ Invalid format: `{pair}` (use key=value)")
+            await safe_send(ctx.channel, f"❌ Invalid format: `{pair}` (use key=value)")
             return
         key, value = pair.split("=", 1)
         data[key.strip()] = value.strip()
@@ -372,7 +373,7 @@ async def setup(ctx, *, args: str):
     ]
     missing = [k for k in required_keys if k not in data]
     if missing:
-        await safe_send(ctx, f"❌ Missing keys: {', '.join(missing)}")
+        await safe_send(ctx.channel, f"❌ Missing keys: {', '.join(missing)}")
         return
 
     # Validate and apply
@@ -381,18 +382,18 @@ async def setup(ctx, *, args: str):
         booster_role = guild.get_role(int(data["booster_role"]))
         logs_channel = guild.get_channel(int(data["logs_channel"]))
         if not booster_role or not logs_channel:
-            await safe_send(ctx, "❌ Invalid role or channel ID.")
+            await safe_send(ctx.channel, "❌ Invalid role or channel ID.")
             return
 
         # Trello API checks
         if not validate_trello_key(data["trello_key"]):
-            return await safe_send(ctx, "❌ Invalid Trello key.")
+            return await safe_send(ctx.channel, "❌ Invalid Trello key.")
         if not validate_trello_token(data["trello_key"], data["trello_token"]):
-            return await safe_send(ctx, "❌ Invalid Trello token.")
+            return await safe_send(ctx.channel, "❌ Invalid Trello token.")
         if not validate_trello_board(data["trello_key"], data["trello_token"], data["trello_board_id"]):
-            return await safe_send(ctx, "❌ Invalid Trello board ID.")
+            return await safe_send(ctx.channel, "❌ Invalid Trello board ID.")
         if not validate_trello_list(data["trello_key"], data["trello_token"], data["trello_list_id"]):
-            return await safe_send(ctx, "❌ Invalid Trello list ID.")
+            return await safe_send(ctx.channel, "❌ Invalid Trello list ID.")
 
         # Save config
         set_server_setting(guild.id, "booster_role_id", int(data["booster_role"]))
@@ -403,10 +404,10 @@ async def setup(ctx, *, args: str):
         set_server_setting(guild.id, "trello_board_id", data["trello_board_id"])
         set_server_setting(guild.id, "trello_list_id", data["trello_list_id"])
 
-        await safe_send(ctx, "✅ Setup completed successfully.")
+        await safe_send(ctx.channel, "✅ Setup completed successfully.")
     except Exception as e:
         print("Setup error:", e)
-        await safe_send(ctx, "❌ An error occurred during setup.")
+        await safe_send(ctx.channel, "❌ An error occurred during setup.")
 
 
 @bot.command()
