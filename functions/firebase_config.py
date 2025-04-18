@@ -2,15 +2,14 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 import json
-from dotenv import load_dotenv
 
+# Read the stringified JSON from environment
+firebase_config_json = os.getenv("FIREBASE_CONFIG_JSON")
 
-load_dotenv()
+# Parse it from JSON string to dict
+firebase_dict = json.loads(firebase_config_json)
 
-firebase_config = os.getenv("FIREBASE_CONFIG_JSON")
-firebase_dict = json.loads(firebase_config)
-
-
+# Correct usage: pass dict, not string
 if not firebase_admin._apps:
     cred = credentials.Certificate(firebase_dict)
     firebase_admin.initialize_app(cred)
