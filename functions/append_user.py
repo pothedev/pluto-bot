@@ -20,7 +20,6 @@ def append_booster(user, guild_id):
     'key': trello_api_key,
     'token': trello_token,
     'name': user,
-    'desc': "10"
   }
 
   response = requests.request(
