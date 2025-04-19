@@ -428,39 +428,39 @@ suggestions_channel_id = 1363260531598819512
 #------------------------------------------------ SUGGESTIONS -------------------------------------------------------
 
 
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
+# @bot.event
+# async def on_message(message):
+#     if message.author == bot.user:
+#         return
 
-    if message.channel.id != suggestions_channel_id:
-        return
-
-
-    embed = discord.Embed(
-        description=message.content,
-        color=discord.Color.yellow()
-    )
-
-    embed.set_footer(
-        text=f"{message.author}  •  {message.created_at.strftime('%m/%d/%Y %I:%M %p')}",
-        icon_url=message.author.display_avatar.url
-    )
-
-    embed.set_author(
-        name="Suggestion「 Under Review 」",
-        icon_url="https://cdn.discordapp.com/attachments/943185637375356998/1363258359368646686/toaster.png?ex=680560c8&is=68040f48&hm=04d37c7d42b6a9f7beceeef394940ab87b0c28df3bb5c2c30f0187ec091ae2cb&"  # example icon
-    )
-
-    sent = await message.channel.send(embed=embed)
-
-    await sent.add_reaction("👍")
-    await sent.add_reaction("👎")
-
-    await message.delete()
+#     if message.channel.id != suggestions_channel_id:
+#         return
 
 
-    await bot.process_commands(message)
+#     embed = discord.Embed(
+#         description=message.content,
+#         color=discord.Color.yellow()
+#     )
+
+#     embed.set_footer(
+#         text=f"{message.author}  •  {message.created_at.strftime('%m/%d/%Y %I:%M %p')}",
+#         icon_url=message.author.display_avatar.url
+#     )
+
+#     embed.set_author(
+#         name="Suggestion「 Under Review 」",
+#         icon_url="https://cdn.discordapp.com/attachments/943185637375356998/1363258359368646686/toaster.png?ex=680560c8&is=68040f48&hm=04d37c7d42b6a9f7beceeef394940ab87b0c28df3bb5c2c30f0187ec091ae2cb&"  # example icon
+#     )
+
+#     sent = await message.channel.send(embed=embed)
+
+#     await sent.add_reaction("👍")
+#     await sent.add_reaction("👎")
+
+#     await message.delete()
+
+
+#     await bot.process_commands(message)
 
 
 
