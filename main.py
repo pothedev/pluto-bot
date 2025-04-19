@@ -280,6 +280,19 @@ async def set_trello_list_id(ctx, list_id: str):
     else:
         await safe_send(ctx.channel, "❌ Invalid Trello list ID.")
 
+
+#----------------------------------------
+
+
+@bot.command()
+async def set_suggestions_channel(ctx, channel: discord.TextChannel):
+    if channel in ctx.guild.text_channels:
+        set_server_setting(ctx.guild.id, "suggestions_channel_id", channel.id)
+        await safe_send(ctx.channel, f"✅ Suggestions channel set to {channel.mention}.")
+    else:
+        await safe_send(ctx.channel, "❌ Channel not found in this server.")
+
+
                 
 #------------------------------------------------------------------------------
 
@@ -423,94 +436,106 @@ async def set_prefix(ctx):
     prefix = ctx
 
 
-suggestions_channel_id = 1363260531598819512
 
 #------------------------------------------------ SUGGESTIONS -------------------------------------------------------
 
 
-# @bot.event
-# async def on_message(message):
-#     if message.author == bot.user:
-#         return
+@bot.event
+async def on_message(message):
 
-#     if message.channel.id != suggestions_channel_id:
-#         return
+    if not message.guild:
+        return
 
+    config = load_config(message.guild.id)
+    suggestions_channel_id = config.get("suggestions_channel_id")
 
-#     embed = discord.Embed(
-#         description=message.content,
-#         color=discord.Color.yellow()
-#     )
+    if message.author == bot.user:
+        return
 
-#     embed.set_footer(
-#         text=f"{message.author}  •  {message.created_at.strftime('%m/%d/%Y %I:%M %p')}",
-#         icon_url=message.author.display_avatar.url
-#     )
+    if message.channel.id == suggestions_channel_id:
+        embed = discord.Embed(
+            description=message.content,
+            color=discord.Color.yellow()
+        )
 
-#     embed.set_author(
-#         name="Suggestion「 Under Review 」",
-#         icon_url="https://cdn.discordapp.com/attachments/943185637375356998/1363258359368646686/toaster.png?ex=680560c8&is=68040f48&hm=04d37c7d42b6a9f7beceeef394940ab87b0c28df3bb5c2c30f0187ec091ae2cb&"  # example icon
-#     )
+        embed.set_footer(
+            text=f"{message.author}  •  {message.created_at.strftime('%m/%d/%Y %I:%M %p')}",
+            icon_url=message.author.display_avatar.url
+        )
 
-#     sent = await message.channel.send(embed=embed)
+        embed.set_author(
+            name="Suggestion「 Under Review 」",
+            icon_url="https://cdn.discordapp.com/attachments/943185637375356998/1363258359368646686/toaster.png"
+        )
 
-#     await sent.add_reaction("👍")
-#     await sent.add_reaction("👎")
+        sent = await message.channel.send(embed=embed)
+        # await sent.add_reaction("👍")
+        # await sent.add_reaction("👎")
 
-#     await message.delete()
+        await sent.add_reaction("<:mw_thumbsup:893807577148821545>")
+        await sent.add_reaction("<:mw_thumbsside:994961972066009138>")
+        await sent.add_reaction("<:mw_thumbsdown:893807653933969429>")
 
+        await message.delete()
 
-#     await bot.process_commands(message)
-
-
-
-
-# @bot.command()
-# async def suggestion_status(ctx, message_id: int, status: str, *, note: str = None):
-#     try:
-#         channel = ctx.channel
-#         message = await channel.fetch_message(message_id)
-
-#         if not message.embeds:
-#             return await ctx.send("❌ That message has no embed.")
-
-#         embed = message.embeds[0]  # Get the first embed
-
-#         # Base icon changes
-#         approved_icon = "https://cdn-icons-png.flaticon.com/512/845/845646.png"
-#         disapproved_icon = "https://cdn-icons-png.flaticon.com/512/463/463612.png"
-
-#         if status.lower() == "approved":
-#             embed.color = discord.Color.green()
-#             icon = approved_icon
-#             title = "Approved"
-#         elif status.lower() == "disapproved":
-#             embed.color = discord.Color.red()
-#             icon = disapproved_icon
-#             title = "Disapproved"
-#         else:
-#             return await ctx.send("❌ Status must be `approved` or `disapproved`.")
-
-#         # Build the updated header
-#         if note:
-#             header = f"{title}「 {note} 」"
-#         else:
-#             header = f"{title}"
-
-#         embed.set_author(name=header, icon_url=icon)
-
-#         await message.edit(embed=embed)
-#         await ctx.send("✅ Suggestion status updated.")
-
-#     except discord.NotFound:
-#         await ctx.send("❌ Message not found. Make sure the ID is from this channel.")
-#     except discord.Forbidden:
-#         await ctx.send("❌ I don't have permission to edit that message.")
-#     except discord.HTTPException:
-#         await ctx.send("❌ Failed to update the message.")
+    # 👇 Must be outside the suggestion channel check
+    await bot.process_commands(message)
 
 
-#     await bot.process_commands(message)
+
+
+@bot.command()
+async def suggestion_status(ctx, message_id: int, status: str, *, note: str = None):
+
+    config = load_config(ctx.guild.id)
+
+    suggestions_channel_id = config.get("suggestions_channel_id")
+    if not suggestions_channel_id:
+        return
+
+    
+    try:
+        channel = bot.get_channel(suggestions_channel_id)
+        message = await channel.fetch_message(message_id)
+
+        if not message.embeds:
+            return await ctx.send("❌ That message has no embed.")
+
+        embed = message.embeds[0]  # Get the first embed
+
+        # Base icon changes
+        approved_icon = "https://cdn.discordapp.com/attachments/943185637375356998/1363261116611956846/FuSIgc6XgAg8_1p.png?ex=6805635a&is=680411da&hm=2018e07f18718e7f5add6e2fbe1323c88ffb163b3528db757e27751ff9bdf663&"
+        disapproved_icon = "https://cdn.discordapp.com/attachments/943185637375356998/1363261805996150885/brimstone.png?ex=680563fe&is=6804127e&hm=113ab85c1f34d0f9e4793b0e9bd573250b18129c01b28c506f12a24b86bc5fa2&"
+
+        if status.lower() == "approved":
+            embed.color = discord.Color.green()
+            icon = approved_icon
+            title = "Approved"
+        elif status.lower() == "disapproved":
+            embed.color = discord.Color.red()
+            icon = disapproved_icon
+            title = "Disapproved"
+        else:
+            return await ctx.send("❌ Status must be `approved` or `disapproved`.")
+
+        # Build the updated header
+        if note:
+            header = f"{title}「 {note} 」"
+        else:
+            header = f"{title}"
+
+        embed.set_author(name=header, icon_url=icon)
+
+        await message.edit(embed=embed)
+        await safe_send(ctx, "✅ Suggestion status updated.")
+
+    except discord.NotFound:
+        await safe_send(ctx, "❌ Message not found. Make sure the ID is from this channel.")
+    except discord.Forbidden:
+        await safe_send(ctx, "❌ I don't have permission to edit that message.")
+    except discord.HTTPException:
+        await safe_send(ctx, "❌ Failed to update the message.")
+
 
 
 bot.run(BOT_TOKEN)
