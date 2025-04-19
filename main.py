@@ -423,15 +423,42 @@ async def set_prefix(ctx):
     prefix = ctx
 
 
-
+suggestions_channel_id = 1363242859884445947
 
 #------------------------------------------------ SUGGESTIONS -------------------------------------------------------
 
 
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
 
-# @bot.event
-# async def on_message(message):
+    if message.channel.id != suggestions_channel_id:
+        return
 
+    # Create the embed
+    embed = discord.Embed(
+        title="Suggestion 「 Under Review 」",
+        description=message.content,
+        color=discord.Color.yellow()
+    )
+
+    embed.set_footer(
+        text=f"{message.author} • {message.created_at.strftime('%m/%d/%Y %I:%M %p')}",
+        icon_url=message.author.display_avatar.url
+    )
+
+    sent = await message.channel.send(embed=embed)
+
+    # React with 👍 and 👎
+    await sent.add_reaction("👍")
+    await sent.add_reaction("👎")
+
+    # Delete the original message to keep it clean
+    await message.delete()
+
+    # Let commands still process
+    await bot.process_commands(message)
 
 
 bot.run(BOT_TOKEN)
