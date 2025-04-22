@@ -107,3 +107,6 @@ class SuggestionStatus(commands.Cog):
 
 
 
+async def setup(bot):
+    await bot.add_cog(AutoSuggestion(bot))
+    await bot.add_cog(SuggestionStatus(bot))
