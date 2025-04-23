@@ -10,19 +10,19 @@ from functions.keepalive import keep_alive
 
 from dotenv import load_dotenv
 import os
+import asyncio
 
 from functions.firebase_config import db
 
 from utils.safe_send import safe_send
-# from cogs.member_update import AutoMemberUpdate, ManualMemberUpdate
 
-
-load_dotenv() 
-
-BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 
 keep_alive()  # start the fake server 
+
+
+load_dotenv() 
+BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 
 
@@ -47,28 +47,12 @@ async def on_ready():
 
 
 
-@bot.command()
-async def show_json(ctx):
-    try:
-        with open("config.json", "r") as f:
-            config_data = json.load(f)
-
-        pretty_json = json.dumps(config_data, indent=2)
-        if len(pretty_json) > 1900:
-            await safe_send(ctx.channel, "⚠️ Config is too long to display here.")
-        else:
-            await safe_send(ctx.channel, f"```json\n{pretty_json}\n```")
-    except Exception as e:
-        await safe_send(ctx.channel, f"❌ Failed to load config: {e}")
-
-
-
 async def main():
     async with bot:
         await load_cogs()
         await bot.start(BOT_TOKEN) 
 
-import asyncio
+
 asyncio.run(main())
 
 

@@ -8,7 +8,7 @@ class ShowJson(commands.Cog):
         self.bot=bot
     
     @commands.command()
-    async def show_json(ctx):
+    async def show_json(self, ctx):
         try:
             with open("config.json", "r") as f:
                 config_data = json.load(f)
