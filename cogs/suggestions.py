@@ -12,17 +12,17 @@ class AutoSuggestion(commands.Cog):
     
     @commands.Cog.listener()
     async def on_message(self, message):
+        if not message.guild or message.author.bot:
+            return
 
-        if not message.guild:
+        # ⛔️ Skip processing if it's a command (e.g., starts with "m!")
+        if message.content.startswith(self.bot.command_prefix):
             return
 
         config = load_config(message.guild.id)
         suggestions_channel_id = config.get("suggestions_channel_id")
 
-        if message.author == self.bot.user:
-            return
-
-        if message.channel.id == suggestions_channel_id:
+        if suggestions_channel_id and message.channel.id == suggestions_channel_id:
             embed = discord.Embed(
                 description=message.content,
                 color=discord.Color.yellow()
@@ -39,15 +39,13 @@ class AutoSuggestion(commands.Cog):
             )
 
             sent = await message.channel.send(embed=embed)
-
             await sent.add_reaction(thumbs_up_emoji)
             await sent.add_reaction(thumbs_middle_emoji)
             await sent.add_reaction(thumbs_down_emoji)
-
             await message.delete()
 
-        # 👇 Must be outside the suggestion channel check
         await self.bot.process_commands(message)
+
     
 
 

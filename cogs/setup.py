@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 
 from utils.safe_send import safe_send
+from utils.is_authorized_user import is_authorized_user
 from functions.setup_functions import set_server_setting, validate_trello_key, validate_trello_token, load_config, validate_trello_board, validate_trello_list
 
 
@@ -12,7 +13,12 @@ class SetBoosterRole(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.command()
+    # @is_authorized_user()
     async def set_booster_role(self, ctx, role: discord.Role):
+        if not is_authorized_user(ctx):
+            safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing booster role")
         if role in ctx.guild.roles:
             set_server_setting(ctx.guild.id, "booster_role_id", role.id)
             await safe_send(ctx.channel, f"✅ Booster role set to {role.name}.")
@@ -20,16 +26,217 @@ class SetBoosterRole(commands.Cog):
             await safe_send(ctx.channel, "❌ Role not found in this server.")
 
 
+class SetGiveawayManagerRole(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def set_giveaway_manager_role(self, ctx, role: str):
+        if not is_authorized_user(ctx):
+            await safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing giveaway manager role")
+
+        try:
+            if role.startswith("<@&") and role.endswith(">"):
+                role_id = int(role[3:-1])
+            else:
+                role_id = int(role)
+
+            resolved_role = ctx.guild.get_role(role_id)
+        except ValueError:
+            resolved_role = discord.utils.find(lambda r: r.name == role, ctx.guild.roles)
+
+        if resolved_role is None:
+            await safe_send(ctx.channel, "❌ Role not found.")
+            return
+
+        set_server_setting(ctx.guild.id, "giveaway_manager_role_id", resolved_role.id)
+        await safe_send(ctx.channel, f"✅ Giveaway manager role set to {resolved_role.name}")
+
+
+
+class SetGameshowHostRole(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def set_gameshow_host_role(self, ctx, role: str):
+        if not is_authorized_user(ctx):
+            await safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing gameshow host role")
+
+        try:
+            if role.startswith("<@&") and role.endswith(">"):
+                role_id = int(role[3:-1])
+            else:
+                role_id = int(role)
+
+            resolved_role = ctx.guild.get_role(role_id)
+        except ValueError:
+            resolved_role = discord.utils.find(lambda r: r.name == role, ctx.guild.roles)
+
+        if resolved_role is None:
+            await safe_send(ctx.channel, "❌ Role not found.")
+            return
+
+        set_server_setting(ctx.guild.id, "gameshow_host_role_id", resolved_role.id)
+        await safe_send(ctx.channel, f"✅ Gameshow host role set to {resolved_role.name}")
+
+
+class SetGiveawayPingRole(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def set_giveaway_ping_role(self, ctx, role: str):
+        if not is_authorized_user(ctx):
+            await safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing giveaway ping role")
+
+        try:
+            if role.startswith("<@&") and role.endswith(">"):
+                role_id = int(role[3:-1])
+            else:
+                role_id = int(role)
+
+            resolved_role = ctx.guild.get_role(role_id)
+        except ValueError:
+            resolved_role = discord.utils.find(lambda r: r.name == role, ctx.guild.roles)
+
+        if resolved_role is None:
+            await safe_send(ctx.channel, "❌ Role not found.")
+            return
+
+        set_server_setting(ctx.guild.id, "giveaway_ping_role_id", resolved_role.id)
+        await safe_send(ctx.channel, f"✅ Giveaway ping role set to {resolved_role.name}")
+
+
+
+class SetGameshowPingRole(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def set_gameshow_ping_role(self, ctx, role: str):
+        if not is_authorized_user(ctx):
+            await safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing gameshow ping role")
+
+        try:
+            if role.startswith("<@&") and role.endswith(">"):
+                role_id = int(role[3:-1])
+            else:
+                role_id = int(role)
+
+            resolved_role = ctx.guild.get_role(role_id)
+        except ValueError:
+            resolved_role = discord.utils.find(lambda r: r.name == role, ctx.guild.roles)
+
+        if resolved_role is None:
+            await safe_send(ctx.channel, "❌ Role not found.")
+            return
+
+        set_server_setting(ctx.guild.id, "gameshow_ping_role_id", resolved_role.id)
+        await safe_send(ctx.channel, f"✅ Gameshow ping role set to {resolved_role.name}")
+
+
+
+
 class SetLogsChannel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.command()
+    # @is_authorized_user()
     async def set_logs_channel(self, ctx, channel: discord.TextChannel):
+      if not is_authorized_user(ctx):
+        safe_send(ctx, "you aint authorized")
+        return
+      else: print("ok user authorized, changing logs channel")
       if channel in ctx.guild.text_channels:
           set_server_setting(ctx.guild.id, "logs_channel_id", channel.id)
           await safe_send(ctx.channel, f"✅ Logs channel set to {channel.mention}.")
       else:
-          await safe_send(ctx.channel, "❌ Channel not found in this server.")   
+          await safe_send(ctx.channel, "❌ Channel not found in this server.")
+
+
+class SetGiveawayChannel(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+    @commands.command()
+    async def set_giveaway_channel(self, ctx, channel: discord.TextChannel):
+      if not is_authorized_user(ctx):
+        safe_send(ctx, "you aint authorized")
+        return
+      else: print("ok user authorized, changing giveaway channel")
+      if channel in ctx.guild.text_channels:
+          set_server_setting(ctx.guild.id, "giveaway_channel_id", channel.id)
+          await safe_send(ctx.channel, f"✅ Giveaway channel set to {channel.mention}.")
+      else:
+          await safe_send(ctx.channel, "❌ Channel not found in this server.")
+
+class SetGameshowChannel(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+    @commands.command()
+    async def set_gameshow_channel(self, ctx, channel: discord.TextChannel):
+      if not is_authorized_user(ctx):
+        safe_send(ctx, "you aint authorized")
+        return
+      else: print("ok user authorized, changing gameshow channel")
+      if channel in ctx.guild.text_channels:
+          set_server_setting(ctx.guild.id, "gameshow_channel_id", channel.id)
+          await safe_send(ctx.channel, f"✅ Gameshow channel set to {channel.mention}.")
+      else:
+          await safe_send(ctx.channel, "❌ Channel not found in this server.")
+
+class SetPingCdChannel(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+    @commands.command()
+    #@is_authorized_user()
+    async def set_ping_cd_channel(self, ctx, channel: discord.TextChannel):
+      if not is_authorized_user(ctx):
+        safe_send(ctx, "you aint authorized")
+        return
+      else: print("ok user authorized, changing ping cd channel")
+      if channel in ctx.guild.text_channels:
+          set_server_setting(ctx.guild.id, "ping_cd_channel_id", channel.id)
+          await safe_send(ctx.channel, f"✅ Ping cd channel set to {channel.mention}.")
+      else:
+          await safe_send(ctx.channel, "❌ Channel not found in this server.")  
+
+
+class SetStaffRole(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def set_staff_role(self, ctx, role: str):
+        if not is_authorized_user(ctx):
+            await safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing staff role")
+
+        try:
+            if role.startswith("<@&") and role.endswith(">"):
+                role_id = int(role[3:-1])
+            else:
+                role_id = int(role)
+
+            resolved_role = ctx.guild.get_role(role_id)
+        except ValueError:
+            resolved_role = discord.utils.find(lambda r: r.name == role, ctx.guild.roles)
+
+        if resolved_role is None:
+            await safe_send(ctx.channel, "❌ Role not found.")
+            return
+
+        set_server_setting(ctx.guild.id, "staff_role_id", resolved_role.id)
+        await safe_send(ctx.channel, f"✅ Staff role set to {resolved_role.id}")
 
 
 
@@ -39,7 +246,12 @@ class SetBloxlinkKey(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.command()
+    # @is_authorized_user()
     async def set_bloxlink_key(self, ctx, key: str):
+        if not is_authorized_user(ctx):
+            safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing bloxlink key")
         if len(key) > 10:
             set_server_setting(ctx.guild.id, "bloxlink_api_key", key)
             await safe_send(ctx.channel, "✅ Bloxlink key saved.")
@@ -54,7 +266,12 @@ class SetTrelloKey(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.command()
+    # @is_authorized_user()
     async def set_trello_key(self, ctx, key: str):
+      if not is_authorized_user(ctx):
+        safe_send(ctx, "you aint authorized")
+        return
+      else: print("ok user authorized, changing trello key")
       if validate_trello_key(key):
           set_server_setting(ctx.guild.id, "trello_api_key", key)
           await safe_send(ctx.channel, "✅ Trello API key saved.")
@@ -66,7 +283,12 @@ class SetTrelloToken(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.command()
+    # @is_authorized_user()
     async def set_trello_token(self, ctx, token: str):
+        if not is_authorized_user(ctx):
+            safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing trello token")
         config = load_config(str(ctx.guild.id))
 
         if "trello_api_key" not in config:
@@ -87,7 +309,12 @@ class SetTrelloBoardId(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.command()
+    # @is_authorized_user()
     async def set_trello_board_id(self, ctx, board_id: str):
+        if not is_authorized_user(ctx):
+            safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing trello board id")
         config = load_config(str(ctx.guild.id))
         if "trello_api_key" not in config or "trello_token" not in config:
             return await safe_send(ctx.channel, "❌ Set Trello key and token first.")
@@ -102,7 +329,12 @@ class SetTrelloListId(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.command()
+    # @is_authorized_user()
     async def set_trello_list_id(self, ctx, list_id: str):
+        if not is_authorized_user(ctx):
+            safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing trello list id")
         config = load_config(str(ctx.guild.id))
         if "trello_api_key" not in config or "trello_token" not in config:
             return await safe_send(ctx.channel, "❌ Set Trello key and token first.")
@@ -120,7 +352,12 @@ class SetSuggestionsChannel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.command()
+    # @is_authorized_user()
     async def set_suggestions_channel(self, ctx, channel: discord.TextChannel):
+        if not is_authorized_user(ctx):
+            safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing suggestions channel")
         if channel in ctx.guild.text_channels:
             set_server_setting(ctx.guild.id, "suggestions_channel_id", channel.id)
             await safe_send(ctx.channel, f"✅ Suggestions channel set to {channel.mention}.")
@@ -135,9 +372,14 @@ class SetSuggestionsChannel(commands.Cog):
 class Setup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+    
     @commands.command()
+    # @is_authorized_user()
     async def setup(self, ctx, *, args: str):
+        if not is_authorized_user(ctx):
+            safe_send(ctx, "you aint authorized")
+            return
+        else: print("ok user authorized, changing setup")
         guild = ctx.guild
 
         # Parse arguments into a dictionary
@@ -193,13 +435,24 @@ class Setup(commands.Cog):
 
 
 async def setup(bot):
+    await bot.add_cog(SetGiveawayManagerRole(bot))
+    await bot.add_cog(SetGameshowHostRole(bot))
+    await bot.add_cog(SetGiveawayPingRole(bot))
+    await bot.add_cog(SetGameshowPingRole(bot))
+    await bot.add_cog(SetStaffRole(bot))
     await bot.add_cog(SetBoosterRole(bot))
+
     await bot.add_cog(SetLogsChannel(bot))
+    await bot.add_cog(SetPingCdChannel(bot))
+    await bot.add_cog(SetSuggestionsChannel(bot))
+    await bot.add_cog(SetGiveawayChannel(bot))
+    await bot.add_cog(SetGameshowChannel(bot))
+
     await bot.add_cog(SetBloxlinkKey(bot))
     await bot.add_cog(SetTrelloKey(bot))
     await bot.add_cog(SetTrelloToken(bot))
     await bot.add_cog(SetTrelloBoardId(bot))
     await bot.add_cog(SetTrelloListId(bot))
-    await bot.add_cog(SetSuggestionsChannel(bot))
+    
     await bot.add_cog(Setup(bot))
     

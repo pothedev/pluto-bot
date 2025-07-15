@@ -109,7 +109,7 @@ def validate_trello_list(key, token, list_id):
 
 #---------------------- is set up ----------------------------
 
-from functions.firebase_config import db  # or wherever you initialized Firestore
+from functions.firebase_config import db 
 
 def is_bot_setup(guild_id):
     guild_id = str(guild_id)
@@ -151,3 +151,67 @@ def is_bot_setup(guild_id):
             return False  # not found in Firebase either
 
     return True  # local config is valid
+
+
+
+def is_ping_cd_channel_set(guild_id):
+    guild_id = str(guild_id)
+
+    # try loading from local JSON
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            config = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        config = {}
+
+    server_config = config.get(guild_id, {})
+
+    # check if key exists locally
+    if not server_config.get("ping_cd_channel_id"):
+        # try fetching from Firestore
+        doc = db.collection("config").document(guild_id).get()
+        if doc.exists:
+            server_config = doc.to_dict()
+
+            # optionally update local cache
+            config[guild_id] = server_config
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(config, f, indent=2)
+
+            return bool(server_config.get("ping_cd_channel_id"))
+        else:
+            return False  # not found in Firebase either
+
+    return True  # local config has the key
+
+
+def is_staff_role_set(guild_id):
+    guild_id = str(guild_id)
+
+    # try loading from local JSON
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            config = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        config = {}
+
+    server_config = config.get(guild_id, {})
+
+    # check if key exists locally
+    if not server_config.get("staff_role_id"):
+        # try fetching from Firestore
+        doc = db.collection("config").document(guild_id).get()
+        if doc.exists:
+            server_config = doc.to_dict()
+
+            # optionally update local cache
+            config[guild_id] = server_config
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(config, f, indent=2)
+
+            return bool(server_config.get("staff_role_id"))
+        else:
+            return False  # not found in Firebase either
+
+    return True  # local config has the key
+

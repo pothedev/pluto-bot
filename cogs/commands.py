@@ -9,8 +9,8 @@ class Commands(commands.Cog):
   def __init__(self, bot):
      self.bot = bot
 
-  @commands.command
-  async def commands(self, ctx):
+  @commands.command(name="commands")
+  async def cmds(self, ctx):
       commands = (
           "➖ update {role} {all/member}\n"
           "➖ set_booster_role\n"

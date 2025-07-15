@@ -41,11 +41,6 @@ async def load_cogs():
             await bot.load_extension(f"cogs.{filename[:-3]}")
 
 
-@bot.event
-async def on_ready():
-    print(f"Bot is online as {bot.user}")
-
-
 
 async def main():
     async with bot:
