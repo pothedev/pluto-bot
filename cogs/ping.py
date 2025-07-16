@@ -92,8 +92,9 @@ async def handle_giveaway(interaction: discord.Interaction):
         asyncio.create_task(interaction.message.delete())
         return
     
-    if (interaction.channel.name != giveaway_channel_name or interaction.channel.name != noreq_channel_name):
+    if (interaction.channel.name != giveaway_channel_name and interaction.channel.name != noreq_channel_name):
         await interaction.response.send_message('Try again in the giveaway channel boy', ephemeral=True)
+        #print("its", interaction.channel.name, "and u need", giveaway_channel_name)
         asyncio.create_task(interaction.message.delete())
         return
     
@@ -147,7 +148,7 @@ async def handle_gameshow(interaction: discord.Interaction):
         asyncio.create_task(interaction.message.delete())
         return
 
-    if not any(role.id == gameshow_host_role_id for role in   interaction.user.roles):
+    if not any(role.id == gameshow_host_role_id for role in interaction.user.roles):
         await interaction.response.send_message('You aint a gameshow host', ephemeral=True)
         asyncio.create_task(interaction.message.delete())
         return
