@@ -15,7 +15,7 @@ cooldowns = {
     "Giveaway/Gameshow": 30, 
     "Event": 30,
     "Here": 45,
-    "Everyone": 1
+    "Everyone": 60
 }
 
 

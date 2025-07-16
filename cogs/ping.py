@@ -6,6 +6,12 @@ from utils.safe_send import safe_send
 from functions.setup_functions import set_server_setting, is_ping_cd_channel_set, is_bot_setup, load_config, is_staff_role_set
 
 
+from datetime import datetime, timedelta
+
+# cooldowns_auto = {guild_id: {"giveaway": datetime, "gameshow": datetime}}
+cooldowns_auto = {}
+
+
 class Ping(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -71,13 +77,10 @@ async def handle_giveaway(interaction: discord.Interaction):
     config = load_config(interaction.guild.id)
     giveaway_manager_role_id = config.get("giveaway_manager_role_id") 
     giveaway_ping_role_id = config.get("giveaway_ping_role_id") 
-    giveaway_channel_id = config.get("giveaway_channel_id")
+    #giveaway_channel_id = config.get("giveaway_channel_id")
+    noreq_channel_name = "・🎉┋no-req"
+    giveaway_channel_name = "・🎉┋giveaway"
     ping_cd = config.get("ping_cd")
-
-    if not giveaway_channel_id:
-        await interaction.response.send_message('Giveaway channel is not set. set it with m!set_giveaway_channel', ephemeral=True)
-        asyncio.create_task(interaction.message.delete())
-        return
     
     if not giveaway_manager_role_id:
         await interaction.response.send_message('Giveaway manager role is not set. Set it with m!set_giveaway_manager_role', ephemeral=True)
@@ -89,15 +92,34 @@ async def handle_giveaway(interaction: discord.Interaction):
         asyncio.create_task(interaction.message.delete())
         return
     
-    if (interaction.channel.id != giveaway_channel_id):
+    if (interaction.channel.name != giveaway_channel_name or interaction.channel.name != noreq_channel_name):
         await interaction.response.send_message('Try again in the giveaway channel boy', ephemeral=True)
         asyncio.create_task(interaction.message.delete())
         return
     
     if ping_cd == "True":
-        await interaction.response.send_message('❌ There is currently a ping cooldown going on', ephemeral=True)
-        await interaction.response.send_message(f"{role.mention}")
+        await interaction.response.send_message('❌ There is currently a manual ping cooldown going on (set by staff)', ephemeral=True)
         return
+
+    now = datetime.utcnow()
+    guild_id = interaction.guild.id
+
+    if guild_id not in cooldowns_auto:
+        cooldowns_auto[guild_id] = {}
+
+    last_ping = cooldowns_auto[guild_id].get("giveaway")
+    if last_ping and now - last_ping < timedelta(minutes=30):
+        remaining = timedelta(minutes=30) - (now - last_ping)
+        await interaction.response.send_message(
+            f'❌ Giveaway ping is on automatic cooldown. Try again in {int(remaining.total_seconds() // 60)} minutes.',
+            ephemeral=True
+        )
+        asyncio.create_task(interaction.message.delete())
+        return
+
+    # Update cooldown
+    cooldowns_auto[guild_id]["giveaway"] = now
+
 
 
     role = interaction.guild.get_role(giveaway_ping_role_id)
@@ -116,13 +138,9 @@ async def handle_gameshow(interaction: discord.Interaction):
     config = load_config(interaction.guild.id)
     gameshow_host_role_id = config.get("gameshow_host_role_id") 
     gameshow_ping_role_id = config.get("gameshow_ping_role_id") 
-    gameshow_channel_id = config.get("gameshow_channel_id")
+    #gameshow_channel_id = config.get("gameshow_channel_id")
+    gameshows_channel_name = "・⭐┋gameshows"
     ping_cd = config.get("ping_cd")
-
-    if not gameshow_channel_id:
-        await interaction.response.send_message('Gameshow channel is not set. Set it with m!set_gameshow_channel', ephemeral=True)
-        asyncio.create_task(interaction.message.delete())
-        return
     
     if not gameshow_host_role_id:
         await interaction.response.send_message('Gameshow host role is not set. Set it with m!set_gameshow_host_role', ephemeral=True)
@@ -134,15 +152,34 @@ async def handle_gameshow(interaction: discord.Interaction):
         asyncio.create_task(interaction.message.delete())
         return
     
-    if (interaction.channel.id != gameshow_channel_id):
+    if (interaction.channel.name != gameshows_channel_name):
         await interaction.response.send_message('Try again in the gameshow channel boy', ephemeral=True)
         asyncio.create_task(interaction.message.delete())
         return
     
     if ping_cd == "True":
-        await interaction.response.send_message('❌ There is currently a ping cooldown going on', ephemeral=True)
-        await interaction.response.send_message(f"{role.mention}")
+        await interaction.response.send_message('❌ There is currently a manual ping cooldown going on (set by staff)', ephemeral=True)
         return
+
+    now = datetime.utcnow()
+    guild_id = interaction.guild.id
+
+    if guild_id not in cooldowns_auto:
+        cooldowns_auto[guild_id] = {}
+
+    last_ping = cooldowns_auto[guild_id].get("gameshow")
+    if last_ping and now - last_ping < timedelta(minutes=30):
+        remaining = timedelta(minutes=30) - (now - last_ping)
+        await interaction.response.send_message(
+            f'❌ Gameshow ping is on automatic cooldown. Try again in {int(remaining.total_seconds() // 60)} minutes.',
+            ephemeral=True
+        )
+        asyncio.create_task(interaction.message.delete())
+        return
+
+    # Update cooldown
+    cooldowns_auto[guild_id]["gameshow"] = now
+
 
     role = interaction.guild.get_role(gameshow_ping_role_id)
     await interaction.response.send_message(
